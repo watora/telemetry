@@ -1,4 +1,4 @@
-module gitlab.ldcu5z28my.com/backend/telemetry
+module github.com/watora/telemetry
 
 go 1.22.0
 
