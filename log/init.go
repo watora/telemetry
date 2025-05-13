@@ -62,13 +62,13 @@ func newLoggerProvider(res *resource.Resource, endPoint string) (*log.LoggerProv
 	return provider, nil
 }
 
-// ZapBridge 使zap导出otel格式日志 context用来传traceId
-func ZapBridge(ctx context.Context, logger *zap.Logger) *zap.Logger {
+// ZapBridge 使zap导出otel格式日志
+func ZapBridge(logger *zap.Logger) *zap.Logger {
 	otelCore := otelzap.NewCore("telemetry", otelzap.WithLoggerProvider(global.GetLoggerProvider()))
 	return zap.New(zapcore.NewTee(
 		otelCore,
 		logger.Core(),
-	)).With(zap.Any("context", ctx))
+	))
 }
 
 // 初始化默认logger 输出到collector和stderr
