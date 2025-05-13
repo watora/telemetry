@@ -11,8 +11,8 @@ func Log(ctx context.Context, level zapcore.Level, message string, fields ...zap
 	if traceId != nil {
 		fields = append(fields, zap.String("traceId", traceId.(string)))
 	}
-	logger := bridgeLogger[defaultLoggerName]
-	logger.Log(level, message, fields...)
+	fields = append(fields, zap.String("env", env))
+	defaultLogger.Log(level, message, fields...)
 }
 
 func Info(ctx context.Context, message string, fields ...zap.Field) {

@@ -20,13 +20,13 @@ var env string
 var version string
 
 // Init 初始化 通过收集器进行收集
-func Init(appName string, _version string, endPoint string) {
+func Init(appName string, _version string, _env string, endPoint string) {
 	counterMap = make(map[string]api.Int64Counter)
 	timerMap = make(map[string]api.Int64Histogram)
 	gaugeMap = make(map[string]api.Int64Gauge)
 	prefix = strings.ReplaceAll(appName, "-", "_")
 	hostName, _ = os.Hostname()
-	env = os.Getenv("ENV_SERVER")
+	env = _env
 	version = _version
 	exporter, err := otlpmetricgrpc.New(context.Background(),
 		otlpmetricgrpc.WithInsecure(),
