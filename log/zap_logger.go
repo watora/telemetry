@@ -7,10 +7,8 @@ import (
 )
 
 func Log(ctx context.Context, level zapcore.Level, message string, fields ...zap.Field) {
-	traceId := ctx.Value("traceId")
-	if traceId != nil {
-		fields = append(fields, zap.String("traceId", traceId.(string)))
-	}
+	// 传context可以自动取traceId
+	fields = append(fields, zap.Any("context", ctx))
 	fields = append(fields, zap.String("env", env))
 	defaultLogger.Log(level, message, fields...)
 }
