@@ -7,7 +7,7 @@ import (
 )
 
 func WithCtx(logger *zap.Logger, ctx context.Context) *zap.Logger {
-	return logger.With(zap.Any("ctx", ctx))
+	return logger.With(zap.Any("context", ctx), zap.String("env", env))
 }
 
 func ctxLog(ctx context.Context, level zapcore.Level, message string, fields ...zap.Field) {
