@@ -14,7 +14,7 @@ var Tracer trace.Tracer
 func InitTracer(appName string) {
 	stdr.SetVerbosity(5)
 
-	exp, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+	exp, err := stdouttrace.New(stdouttrace.WithWriter(&noopWriter{}))
 	if err != nil {
 		panic(fmt.Sprintf("init tracer err: %v", err))
 	}
@@ -26,4 +26,11 @@ func InitTracer(appName string) {
 	otel.SetTracerProvider(provider)
 
 	Tracer = provider.Tracer(appName)
+}
+
+type noopWriter struct {
+}
+
+func (w *noopWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
 }
