@@ -3,6 +3,7 @@ package telemetry
 import (
 	"github.com/watora/telemetry/log"
 	"github.com/watora/telemetry/metrics"
+	"github.com/watora/telemetry/trace"
 )
 
 type Config struct {
@@ -23,5 +24,6 @@ func Init(fn func(cfg *Config)) {
 	}
 	if cfg.UseLogger {
 		log.Init(cfg.AppName, cfg.Version, cfg.Env, cfg.LogEndPoint)
+		trace.InitTracer(cfg.AppName)
 	}
 }
