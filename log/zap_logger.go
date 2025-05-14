@@ -10,10 +10,6 @@ func WithCtx(logger *zap.Logger, ctx context.Context) *zap.Logger {
 	return logger.With(zap.Any("ctx", ctx))
 }
 
-func WithFields(logger *zap.Logger, fields ...zap.Field) *zap.Logger {
-	return logger.With(fields...)
-}
-
 func ctxLog(ctx context.Context, level zapcore.Level, message string, fields ...zap.Field) {
 	// 传context可以自动取traceId
 	fields = append(fields, zap.Any("context", ctx))
