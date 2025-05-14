@@ -33,13 +33,13 @@ func InstrumentGORM(db *gorm.DB) {
 					ctx = db.Statement.Context
 				}
 				attr := []attribute.KeyValue{
-					{Key: "_table", Value: attribute.StringValue(db.Statement.Table)},
-					{Key: "_success", Value: attribute.BoolValue(db.Statement.Error == nil)},
-					{Key: "_command", Value: attribute.StringValue(command)},
-					{Key: "_host", Value: attribute.StringValue(hostName)},
-					{Key: "_env", Value: attribute.StringValue(env)},
-					{Key: "_driver", Value: attribute.StringValue(db.Dialector.Name())},
-					{Key: "_version", Value: attribute.StringValue(version)},
+					{Key: "__table", Value: attribute.StringValue(db.Statement.Table)},
+					{Key: "__success", Value: attribute.BoolValue(db.Statement.Error == nil)},
+					{Key: "__command", Value: attribute.StringValue(command)},
+					{Key: "__host", Value: attribute.StringValue(hostName)},
+					{Key: "__env", Value: attribute.StringValue(env)},
+					{Key: "__driver", Value: attribute.StringValue(db.Dialector.Name())},
+					{Key: "__version", Value: attribute.StringValue(version)},
 				}
 				EmitTime(ctx, "gorm", end-start, attr...)
 				EmitCount(ctx, "gorm", 1, attr...)
@@ -71,13 +71,13 @@ func InstrumentGoZero(server *rest.Server) {
 			}
 			end := time.Now().UnixMilli()
 			attr := []attribute.KeyValue{
-				{Key: "_path", Value: attribute.StringValue(r.URL.Path)},
-				{Key: "_method", Value: attribute.StringValue(r.Method)},
-				{Key: "_status_code", Value: attribute.IntValue(wl.statusCode)},
-				{Key: "_success", Value: attribute.BoolValue(wl.statusCode < 400)},
-				{Key: "_host", Value: attribute.StringValue(hostName)},
-				{Key: "_env", Value: attribute.StringValue(env)},
-				{Key: "_version", Value: attribute.StringValue(version)},
+				{Key: "__path", Value: attribute.StringValue(r.URL.Path)},
+				{Key: "__method", Value: attribute.StringValue(r.Method)},
+				{Key: "__status_code", Value: attribute.IntValue(wl.statusCode)},
+				{Key: "__success", Value: attribute.BoolValue(wl.statusCode < 400)},
+				{Key: "__host", Value: attribute.StringValue(hostName)},
+				{Key: "__env", Value: attribute.StringValue(env)},
+				{Key: "__version", Value: attribute.StringValue(version)},
 			}
 			EmitTime(r.Context(), "http", end-start, attr...)
 			EmitCount(r.Context(), "http", 1, attr...)
@@ -92,10 +92,10 @@ func InstrumentZinx(server ziface.IServer) {
 		request.RouterSlicesNext()
 		end := time.Now().UnixMilli()
 		attr := []attribute.KeyValue{
-			{Key: "_msg_id", Value: attribute.StringValue(fmt.Sprintf("%v", request.GetMsgID()))},
-			{Key: "_host", Value: attribute.StringValue(hostName)},
-			{Key: "_env", Value: attribute.StringValue(env)},
-			{Key: "_version", Value: attribute.StringValue(version)},
+			{Key: "__msg_id", Value: attribute.StringValue(fmt.Sprintf("%v", request.GetMsgID()))},
+			{Key: "__host", Value: attribute.StringValue(hostName)},
+			{Key: "__env", Value: attribute.StringValue(env)},
+			{Key: "__version", Value: attribute.StringValue(version)},
 		}
 		ctx := context.Background()
 		EmitTime(ctx, "zinx", end-start, attr...)
@@ -105,18 +105,18 @@ func InstrumentZinx(server ziface.IServer) {
 	var connected int64
 	server.SetOnConnStart(func(connection ziface.IConnection) {
 		attr := []attribute.KeyValue{
-			{Key: "_host", Value: attribute.StringValue(hostName)},
-			{Key: "_env", Value: attribute.StringValue(env)},
-			{Key: "_version", Value: attribute.StringValue(version)},
+			{Key: "__host", Value: attribute.StringValue(hostName)},
+			{Key: "__env", Value: attribute.StringValue(env)},
+			{Key: "__version", Value: attribute.StringValue(version)},
 		}
 		atomic.AddInt64(&connected, 1)
 		EmitGauge(connection.Context(), "zinx", atomic.LoadInt64(&connected), attr...)
 	})
 	server.SetOnConnStop(func(connection ziface.IConnection) {
 		attr := []attribute.KeyValue{
-			{Key: "_host", Value: attribute.StringValue(hostName)},
-			{Key: "_env", Value: attribute.StringValue(env)},
-			{Key: "_version", Value: attribute.StringValue(version)},
+			{Key: "__host", Value: attribute.StringValue(hostName)},
+			{Key: "__env", Value: attribute.StringValue(env)},
+			{Key: "__version", Value: attribute.StringValue(version)},
 		}
 		atomic.AddInt64(&connected, -1)
 		EmitGauge(connection.Context(), "zinx", atomic.LoadInt64(&connected), attr...)
@@ -143,10 +143,10 @@ func InstrumentRedisV8(client *redis.ClusterClient) {
 			}
 			end := time.Now().UnixMilli()
 			attr := []attribute.KeyValue{
-				{Key: "_cmd", Value: attribute.StringValue(cmd)},
-				{Key: "_host", Value: attribute.StringValue(hostName)},
-				{Key: "_env", Value: attribute.StringValue(env)},
-				{Key: "_version", Value: attribute.StringValue(version)},
+				{Key: "__cmd", Value: attribute.StringValue(cmd)},
+				{Key: "__host", Value: attribute.StringValue(hostName)},
+				{Key: "__env", Value: attribute.StringValue(env)},
+				{Key: "__version", Value: attribute.StringValue(version)},
 			}
 			EmitTime(ctx, "redis", end-start.(int64), attr...)
 			EmitCount(ctx, "redis", 1, attr...)
