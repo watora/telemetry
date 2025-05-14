@@ -25,6 +25,7 @@ func Init(appName string, _version string, _env string, endPoint string) {
 	timerMap = make(map[string]api.Int64Histogram)
 	gaugeMap = make(map[string]api.Int64Gauge)
 	prefix = strings.ReplaceAll(appName, "-", "_")
+	_ = os.Setenv("OTEL_SERVICE_NAME", appName)
 	hostName, _ = os.Hostname()
 	env = _env
 	version = _version
