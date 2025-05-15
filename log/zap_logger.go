@@ -11,7 +11,12 @@ func WithCtx(logger *zap.Logger, ctx context.Context) *zap.Logger {
 	return logger.With(zap.Any("context", ctx), zap.String("env", env))
 }
 
-// 全局logger
+// WithCtxDefault 使用默认logger
+func WithCtxDefault(ctx context.Context) *zap.Logger {
+	return defaultLogger.With(zap.Any("context", ctx), zap.String("env", env))
+}
+
+// 全局方法
 func ctxLog(ctx context.Context, level zapcore.Level, message string, fields ...zap.Field) {
 	// 传context可以自动取traceId
 	fields = append(fields, zap.Any("context", ctx), zap.String("env", env))
