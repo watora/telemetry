@@ -13,17 +13,17 @@ var meter api.Meter
 var counterMap map[string]api.Int64Counter
 var timerMap map[string]api.Int64Histogram
 var gaugeMap map[string]api.Int64Gauge
-var prefix string
+var appName string
 var hostName string
 var env string
 var version string
 
 // Init 初始化 通过收集器进行收集
-func Init(appName string, _version string, _env string, endPoint string) {
+func Init(_appName string, _version string, _env string, endPoint string) {
 	counterMap = make(map[string]api.Int64Counter)
 	timerMap = make(map[string]api.Int64Histogram)
 	gaugeMap = make(map[string]api.Int64Gauge)
-	prefix = appName
+	appName = _appName
 	hostName, _ = os.Hostname()
 	env = _env
 	version = _version
@@ -48,5 +48,5 @@ func Init(appName string, _version string, _env string, endPoint string) {
 			},
 		)),
 	)
-	meter = provider.Meter(appName)
+	meter = provider.Meter(_appName)
 }
