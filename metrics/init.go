@@ -7,7 +7,6 @@ import (
 	api "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"os"
-	"strings"
 )
 
 var meter api.Meter
@@ -24,8 +23,7 @@ func Init(appName string, _version string, _env string, endPoint string) {
 	counterMap = make(map[string]api.Int64Counter)
 	timerMap = make(map[string]api.Int64Histogram)
 	gaugeMap = make(map[string]api.Int64Gauge)
-	prefix = strings.ReplaceAll(appName, "-", "_")
-	_ = os.Setenv("OTEL_SERVICE_NAME", appName)
+	prefix = appName
 	hostName, _ = os.Hostname()
 	env = _env
 	version = _version
@@ -36,6 +34,19 @@ func Init(appName string, _version string, _env string, endPoint string) {
 	if err != nil {
 		panic(fmt.Sprintf("init exporter: %v", err))
 	}
-	provider := metric.NewMeterProvider(metric.WithReader(metric.NewPeriodicReader(exporter)))
+	provider := metric.NewMeterProvider(
+		metric.WithReader(metric.NewPeriodicReader(exporter)),
+		metric.WithView(metric.NewView(
+			metric.Instrument{
+				Kind: metric.InstrumentKindHistogram,
+			},
+			metric.Stream{
+				// 调整桶的精度
+				Aggregation: metric.AggregationExplicitBucketHistogram{
+					Boundaries: []float64{0, 1, 2, 5, 10, 20, 30, 50, 75, 100, 250, 500, 1000, 2500, 5000, 10000},
+				},
+			},
+		)),
+	)
 	meter = provider.Meter(appName)
 }
