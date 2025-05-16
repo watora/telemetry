@@ -68,7 +68,8 @@ func ZapBridge(logger *zap.Logger) *zap.Logger {
 	return zap.New(zapcore.NewTee(
 		otelCore,
 		logger.Core(),
-	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).
+		With(zap.String("env", env))
 }
 
 // 初始化默认logger 输出到collector和stderr
@@ -86,5 +87,6 @@ func initDefaultLogger() {
 	defaultLogger = zap.New(zapcore.NewTee(
 		otelCore,
 		stdCore,
-	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).
+		With(zap.String("env", env))
 }
