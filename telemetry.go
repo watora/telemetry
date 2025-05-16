@@ -9,17 +9,11 @@ import (
 	"strings"
 )
 
-var hostName string
-var env string
-var version string
-
 func Init(fn func(cfg *config.Config)) {
 	cfg := config.Global
 	fn(cfg)
 	cfg.AppName = strings.ReplaceAll(cfg.AppName, "-", "_")
-	hostName, _ = os.Hostname()
-	env = cfg.Env
-	version = cfg.Version
+	cfg.HostName, _ = os.Hostname()
 	if cfg.UseMetrics {
 		metrics.Init()
 	}
