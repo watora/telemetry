@@ -1,10 +1,13 @@
-package metrics
+package telemetry
 
 import (
 	"context"
 	"fmt"
 	"github.com/aceld/zinx/ziface"
 	"github.com/go-redis/redis/v8"
+	"github.com/watora/telemetry/config"
+	"github.com/watora/telemetry/metrics"
+	"github.com/watora/telemetry/trace"
 	"github.com/zeromicro/go-zero/rest"
 	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/gorm"
@@ -36,13 +39,13 @@ func InstrumentGORM(db *gorm.DB) {
 					{Key: "table", Value: attribute.StringValue(db.Statement.Table)},
 					{Key: "success", Value: attribute.BoolValue(db.Statement.Error == nil)},
 					{Key: "command", Value: attribute.StringValue(command)},
-					{Key: "host", Value: attribute.StringValue(hostName)},
-					{Key: "env", Value: attribute.StringValue(env)},
+					{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+					{Key: "env", Value: attribute.StringValue(config.Global.Env)},
 					{Key: "driver", Value: attribute.StringValue(db.Dialector.Name())},
-					{Key: "version", Value: attribute.StringValue(version)},
+					{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 				}
-				EmitTime(ctx, "gorm", end-start, attr...)
-				EmitCount(ctx, "gorm", 1, attr...)
+				metrics.EmitTime(ctx, "gorm", end-start, attr...)
+				metrics.EmitCount(ctx, "gorm", 1, attr...)
 			}
 		}
 	}
@@ -63,7 +66,10 @@ func InstrumentGoZero(server *rest.Server) {
 	server.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now().UnixMilli()
-			wl := &writeLogger{ResponseWriter: w}
+			wl := &metrics.WriteLogger{ResponseWriter: w}
+			newCtx, span := trace.Tracer.Start(r.Context(), "http_request")
+			defer span.End()
+			r = r.WithContext(newCtx)
 			next(wl, r)
 			if strings.HasPrefix(r.URL.Path, "/swagger") ||
 				strings.HasPrefix(r.URL.Path, "/metrics") {
@@ -73,14 +79,14 @@ func InstrumentGoZero(server *rest.Server) {
 			attr := []attribute.KeyValue{
 				{Key: "path", Value: attribute.StringValue(r.URL.Path)},
 				{Key: "method", Value: attribute.StringValue(r.Method)},
-				{Key: "status_code", Value: attribute.IntValue(wl.statusCode)},
-				{Key: "success", Value: attribute.BoolValue(wl.statusCode < 400)},
-				{Key: "host", Value: attribute.StringValue(hostName)},
-				{Key: "env", Value: attribute.StringValue(env)},
-				{Key: "version", Value: attribute.StringValue(version)},
+				{Key: "status_code", Value: attribute.IntValue(wl.StatusCode)},
+				{Key: "success", Value: attribute.BoolValue(wl.StatusCode < 400)},
+				{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
-			EmitTime(r.Context(), "http", end-start, attr...)
-			EmitCount(r.Context(), "http", 1, attr...)
+			metrics.EmitTime(r.Context(), "http", end-start, attr...)
+			metrics.EmitCount(r.Context(), "http", 1, attr...)
 		}
 	})
 }
@@ -89,51 +95,54 @@ func InstrumentGoZero(server *rest.Server) {
 func InstrumentZinx(server ziface.IServer) {
 	server.Use(func(request ziface.IRequest) {
 		start := time.Now().UnixMilli()
+		// 每个请求新建一个span
+		ctx, span := trace.Tracer.Start(context.Background(), "zinx_request")
+		defer span.End()
+		request.Set("ctx", ctx)
 		request.RouterSlicesNext()
 		end := time.Now().UnixMilli()
 		attr := []attribute.KeyValue{
 			{Key: "msg_id", Value: attribute.StringValue(fmt.Sprintf("%v", request.GetMsgID()))},
-			{Key: "host", Value: attribute.StringValue(hostName)},
-			{Key: "env", Value: attribute.StringValue(env)},
-			{Key: "version", Value: attribute.StringValue(version)},
+			{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+			{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+			{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 		}
-		ctx := context.Background()
-		EmitTime(ctx, "zinx", end-start, attr...)
-		EmitCount(ctx, "zinx", 1, attr...)
+		metrics.EmitTime(ctx, "zinx", end-start, attr...)
+		metrics.EmitCount(ctx, "zinx", 1, attr...)
 	})
 	// 记录连接数
 	var connected int64
 	server.SetOnConnStart(func(connection ziface.IConnection) {
 		attr := []attribute.KeyValue{
-			{Key: "host", Value: attribute.StringValue(hostName)},
-			{Key: "env", Value: attribute.StringValue(env)},
-			{Key: "version", Value: attribute.StringValue(version)},
+			{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+			{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+			{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 		}
 		atomic.AddInt64(&connected, 1)
-		EmitGauge(connection.Context(), "zinx", atomic.LoadInt64(&connected), attr...)
+		metrics.EmitGauge(connection.Context(), "zinx_live", atomic.LoadInt64(&connected), attr...)
 	})
 	server.SetOnConnStop(func(connection ziface.IConnection) {
 		attr := []attribute.KeyValue{
-			{Key: "host", Value: attribute.StringValue(hostName)},
-			{Key: "env", Value: attribute.StringValue(env)},
-			{Key: "version", Value: attribute.StringValue(version)},
+			{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+			{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+			{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 		}
 		atomic.AddInt64(&connected, -1)
-		EmitGauge(connection.Context(), "zinx", atomic.LoadInt64(&connected), attr...)
+		metrics.EmitGauge(connection.Context(), "zinx_live", atomic.LoadInt64(&connected), attr...)
 	})
 }
 
 // InstrumentRedisV8 仪表化redis，必须是v8的连接
 func InstrumentRedisV8(client *redis.ClusterClient) {
-	client.AddHook(&redisHook{
-		meterBefore: func(ctx context.Context) context.Context {
+	client.AddHook(&metrics.RedisHook{
+		MeterBefore: func(ctx context.Context) context.Context {
 			start := time.Now().UnixMilli()
 			if ctx == nil {
 				ctx = context.Background()
 			}
 			return context.WithValue(ctx, "metrics.before", start)
 		},
-		meterAfter: func(ctx context.Context, cmd string) {
+		MeterAfter: func(ctx context.Context, cmd string) {
 			if ctx == nil {
 				return
 			}
@@ -144,12 +153,12 @@ func InstrumentRedisV8(client *redis.ClusterClient) {
 			end := time.Now().UnixMilli()
 			attr := []attribute.KeyValue{
 				{Key: "cmd", Value: attribute.StringValue(cmd)},
-				{Key: "host", Value: attribute.StringValue(hostName)},
-				{Key: "env", Value: attribute.StringValue(env)},
-				{Key: "version", Value: attribute.StringValue(version)},
+				{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
-			EmitTime(ctx, "redis", end-start.(int64), attr...)
-			EmitCount(ctx, "redis", 1, attr...)
+			metrics.EmitTime(ctx, "redis", end-start.(int64), attr...)
+			metrics.EmitCount(ctx, "redis", 1, attr...)
 		},
 	})
 }

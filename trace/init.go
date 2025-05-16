@@ -3,6 +3,7 @@ package trace
 import (
 	"fmt"
 	"github.com/go-logr/stdr"
+	"github.com/watora/telemetry/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -11,7 +12,7 @@ import (
 
 var Tracer trace.Tracer
 
-func InitTracer(appName string) {
+func Init() {
 	stdr.SetVerbosity(5)
 
 	exp, err := stdouttrace.New(stdouttrace.WithWriter(&noopWriter{}))
@@ -25,7 +26,7 @@ func InitTracer(appName string) {
 	)
 	otel.SetTracerProvider(provider)
 
-	Tracer = provider.Tracer(appName)
+	Tracer = provider.Tracer(config.Global.AppName)
 }
 
 type noopWriter struct {

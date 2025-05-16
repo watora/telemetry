@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"fmt"
+	"github.com/watora/telemetry/config"
 	"go.opentelemetry.io/contrib/bridges/otelzap"
 	"go.opentelemetry.io/contrib/processors/minsev"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -16,24 +17,22 @@ import (
 )
 
 var defaultLogger *zap.Logger
-var env string
 
 // Init 直接导出otel日志到collector
-func Init(appName string, version string, _env string, endPoint string) {
+func Init() {
 	hostName, _ := os.Hostname()
 	// Create resource
 	res, err := resource.Merge(resource.Default(),
 		resource.NewWithAttributes(semconv.SchemaURL,
-			semconv.ServiceName(appName),
-			semconv.ServiceVersion(version),
+			semconv.ServiceName(config.Global.AppName),
+			semconv.ServiceVersion(config.Global.Version),
 			semconv.ServiceInstanceID(hostName),
 		))
-	env = _env
 	if err != nil {
 		panic(fmt.Sprintf("init resource: %v", err))
 	}
 	// 新建provider
-	loggerProvider, err := newLoggerProvider(res, endPoint)
+	loggerProvider, err := newLoggerProvider(res, config.Global.LogEndPoint)
 	if err != nil {
 		panic(fmt.Sprintf("init provider: %v", err))
 	}
@@ -51,7 +50,7 @@ func newLoggerProvider(res *resource.Resource, endPoint string) (*log.LoggerProv
 		return nil, err
 	}
 	level := minsev.SeverityInfo
-	if env == "local" {
+	if config.Global.Env == "local" {
 		level = minsev.SeverityDebug
 	}
 	processor := minsev.NewLogProcessor(log.NewBatchProcessor(exporter), level)
@@ -69,13 +68,13 @@ func ZapBridge(logger *zap.Logger) *zap.Logger {
 		otelCore,
 		logger.Core(),
 	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).
-		With(zap.String("env", env))
+		With(zap.String("env", config.Global.Env))
 }
 
 // 初始化默认logger 输出到collector和stderr
 func initDefaultLogger() {
 	level := zapcore.InfoLevel
-	if env == "local" {
+	if config.Global.Env == "local" {
 		level = zapcore.DebugLevel
 	}
 	otelCore := otelzap.NewCore("telemetry", otelzap.WithLoggerProvider(global.GetLoggerProvider()))
@@ -88,5 +87,5 @@ func initDefaultLogger() {
 		otelCore,
 		stdCore,
 	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).
-		With(zap.String("env", env))
+		With(zap.String("env", config.Global.Env))
 }

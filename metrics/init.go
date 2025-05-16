@@ -3,33 +3,25 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"github.com/watora/telemetry/config"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	api "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/metric"
-	"os"
 )
 
 var meter api.Meter
 var counterMap map[string]api.Int64Counter
 var timerMap map[string]api.Int64Histogram
 var gaugeMap map[string]api.Int64Gauge
-var appName string
-var hostName string
-var env string
-var version string
 
 // Init 初始化 通过收集器进行收集
-func Init(_appName string, _version string, _env string, endPoint string) {
+func Init() {
 	counterMap = make(map[string]api.Int64Counter)
 	timerMap = make(map[string]api.Int64Histogram)
 	gaugeMap = make(map[string]api.Int64Gauge)
-	appName = _appName
-	hostName, _ = os.Hostname()
-	env = _env
-	version = _version
 	exporter, err := otlpmetricgrpc.New(context.Background(),
 		otlpmetricgrpc.WithInsecure(),
-		otlpmetricgrpc.WithEndpoint(endPoint),
+		otlpmetricgrpc.WithEndpoint(config.Global.MetricsEndPoint),
 	)
 	if err != nil {
 		panic(fmt.Sprintf("init exporter: %v", err))
@@ -48,5 +40,5 @@ func Init(_appName string, _version string, _env string, endPoint string) {
 			},
 		)),
 	)
-	meter = provider.Meter(_appName)
+	meter = provider.Meter(config.Global.AppName)
 }

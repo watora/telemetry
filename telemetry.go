@@ -1,31 +1,30 @@
 package telemetry
 
 import (
+	"github.com/watora/telemetry/config"
 	"github.com/watora/telemetry/log"
 	"github.com/watora/telemetry/metrics"
 	"github.com/watora/telemetry/trace"
+	"os"
 	"strings"
 )
 
-type Config struct {
-	AppName         string
-	Version         string
-	MetricsEndPoint string
-	LogEndPoint     string
-	UseMetrics      bool
-	UseLogger       bool
-	Env             string
-}
+var hostName string
+var env string
+var version string
 
-func Init(fn func(cfg *Config)) {
-	cfg := &Config{}
+func Init(fn func(cfg *config.Config)) {
+	cfg := config.Global
 	fn(cfg)
 	cfg.AppName = strings.ReplaceAll(cfg.AppName, "-", "_")
+	hostName, _ = os.Hostname()
+	env = cfg.Env
+	version = cfg.Version
 	if cfg.UseMetrics {
-		metrics.Init(cfg.AppName, cfg.Version, cfg.Env, cfg.MetricsEndPoint)
+		metrics.Init()
 	}
 	if cfg.UseLogger {
-		log.Init(cfg.AppName, cfg.Version, cfg.Env, cfg.LogEndPoint)
-		trace.InitTracer(cfg.AppName)
+		log.Init()
+		trace.Init()
 	}
 }
