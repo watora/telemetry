@@ -95,10 +95,6 @@ func InstrumentGoZero(server *rest.Server) {
 func InstrumentZinx(server ziface.IServer) {
 	server.Use(func(request ziface.IRequest) {
 		start := time.Now().UnixMilli()
-		// 每个请求新建一个span
-		ctx, span := trace.Tracer.Start(context.Background(), "zinx_request")
-		defer span.End()
-		request.Set("ctx", ctx)
 		request.RouterSlicesNext()
 		end := time.Now().UnixMilli()
 		attr := []attribute.KeyValue{
@@ -107,6 +103,7 @@ func InstrumentZinx(server ziface.IServer) {
 			{Key: "env", Value: attribute.StringValue(config.Global.Env)},
 			{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 		}
+		ctx := context.Background()
 		metrics.EmitTime(ctx, "zinx", end-start, attr...)
 		metrics.EmitCount(ctx, "zinx", 1, attr...)
 	})
