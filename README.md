@@ -1,18 +1,21 @@
 初始化
-```golang
-telemetry.Init(func(cfg *telemetry.Config) {
-  cfg.Env = "local"
-  cfg.Version = "1.0.0"
-  cfg.AppName = "AppName"
-  cfg.UseLogger = true
-  cfg.UseMetrics = true
-  cfg.LogEndPoint = "localhost:4318"   // collector的地址
-  cfg.MetricsEndPoint = "localhost:4317"
-})
-```
+- 引入依赖
+  - github.com/watora/telemetry
+  - github.com/watora/telemetry/config
+  ```golang
+  telemetry.Init(func(cfg *config.Config) {
+    cfg.Env = "local"
+    cfg.Version = "1.0.0"
+    cfg.AppName = "AppName"
+    cfg.UseLogger = true
+    cfg.UseMetrics = true
+    cfg.LogEndPoint = "localhost:4318"   // collector的地址
+    cfg.MetricsEndPoint = "localhost:4317"
+  })
+  ```
 
 log:
-- 引入依赖
+- 引入依赖 
   - github.com/watora/telemetry/log
   - github.com/watora/telemetry/trace
 - 对原来的zaplogger 使用zapbridge替换
