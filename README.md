@@ -19,9 +19,10 @@ log:
   - github.com/watora/telemetry/log
   - github.com/watora/telemetry/trace
 - 对原来的zaplogger 使用zapbridge替换
-  - logger = log.ZapBridge(log)
-- 如果要记录traceId 先创建span 然后把ctx赋给logger
+  - logger = log.ZapBridge(logger)
+- 如果要记录traceId 先创建span 然后把ctx赋给logger 用完的span必须end
   - ctx, span := trace.Tracer.Start(context.Background(), "xxx")
+  - defer span.End()
   - logger = log.WithCtx(logger, ctx)
 - 如果没有logger 可以用全局方法
   - log.CtxInfo(ctx, "xxxx")
