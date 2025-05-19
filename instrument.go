@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/aceld/zinx/ziface"
+	redisV6 "github.com/go-redis/redis"
 	"github.com/go-redis/redis/v8"
 	"github.com/watora/telemetry/config"
 	"github.com/watora/telemetry/metrics"
@@ -154,8 +155,46 @@ func InstrumentRedisV8(client *redis.ClusterClient) {
 				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
 				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
-			metrics.EmitTime(ctx, "redis", end-start.(int64), attr...)
-			metrics.EmitCount(ctx, "redis", 1, attr...)
+			metrics.EmitTime(ctx, "redis_v8", end-start.(int64), attr...)
+			metrics.EmitCount(ctx, "redis_v8", 1, attr...)
 		},
+	})
+}
+
+// InstrumentRedis 仪表化redis，必须是v6的连接
+func InstrumentRedis(client *redisV6.ClusterClient) {
+	// 替换process
+	client.WrapProcess(func(oldProcess func(redisV6.Cmder) error) func(redisV6.Cmder) error {
+		return func(cmder redisV6.Cmder) error {
+			start := time.Now().UnixMilli()
+			err := oldProcess(cmder)
+			attr := []attribute.KeyValue{
+				{Key: "cmd", Value: attribute.StringValue(cmder.Name())},
+				{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
+			}
+			ctx := context.Background()
+			metrics.EmitTime(ctx, "redis_v6", time.Now().UnixMilli()-start, attr...)
+			metrics.EmitCount(ctx, "redis_v6", 1, attr...)
+			return err
+		}
+	})
+	// pipeline
+	client.WrapProcessPipeline(func(oldProcess func([]redisV6.Cmder) error) func([]redisV6.Cmder) error {
+		return func(cmders []redisV6.Cmder) error {
+			start := time.Now().UnixMilli()
+			err := oldProcess(cmders)
+			attr := []attribute.KeyValue{
+				{Key: "cmd", Value: attribute.StringValue("pipeline")},
+				{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
+			}
+			ctx := context.Background()
+			metrics.EmitTime(ctx, "redis_v6", time.Now().UnixMilli()-start, attr...)
+			metrics.EmitCount(ctx, "redis_v6", 1, attr...)
+			return err
+		}
 	})
 }
