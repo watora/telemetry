@@ -202,7 +202,7 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 }
 
 // InstrumentMongo 仪表化mongo
-func InstrumentMongo(options *options.ClientOptions) {
+func InstrumentMongo(options *options.ClientOptions) *options.ClientOptions {
 	monitor := &event.CommandMonitor{
 		Started: func(ctx context.Context, e *event.CommandStartedEvent) {
 			p := &ctx
@@ -240,5 +240,5 @@ func InstrumentMongo(options *options.ClientOptions) {
 			}
 		},
 	}
-	options.SetMonitor(monitor)
+	return options.SetMonitor(monitor)
 }
