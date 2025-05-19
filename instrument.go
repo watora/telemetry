@@ -10,6 +10,8 @@ import (
 	"github.com/watora/telemetry/metrics"
 	"github.com/watora/telemetry/trace"
 	"github.com/zeromicro/go-zero/rest"
+	"go.mongodb.org/mongo-driver/event"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/gorm"
 	"net/http"
@@ -197,4 +199,46 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 			return err
 		}
 	})
+}
+
+// InstrumentMongo 仪表化mongo
+func InstrumentMongo(options *options.ClientOptions) {
+	monitor := &event.CommandMonitor{
+		Started: func(ctx context.Context, e *event.CommandStartedEvent) {
+			p := &ctx
+			*p = context.WithValue(ctx, "metrics.start", time.Now().UnixMilli())
+
+		},
+		Succeeded: func(ctx context.Context, succeededEvent *event.CommandSucceededEvent) {
+			v := ctx.Value("metrics.start")
+			if v != nil {
+				start := v.(int64)
+				attr := []attribute.KeyValue{
+					{Key: "cmd", Value: attribute.StringValue(succeededEvent.CommandName)},
+					{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+					{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+					{Key: "version", Value: attribute.StringValue(config.Global.Version)},
+					{Key: "success", Value: attribute.BoolValue(true)},
+				}
+				metrics.EmitTime(ctx, "mongo", time.Now().UnixMilli()-start, attr...)
+				metrics.EmitCount(ctx, "mongo", 1, attr...)
+			}
+		},
+		Failed: func(ctx context.Context, failedEvent *event.CommandFailedEvent) {
+			v := ctx.Value("metrics.start")
+			if v != nil {
+				start := v.(int64)
+				attr := []attribute.KeyValue{
+					{Key: "cmd", Value: attribute.StringValue(failedEvent.CommandName)},
+					{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+					{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+					{Key: "version", Value: attribute.StringValue(config.Global.Version)},
+					{Key: "success", Value: attribute.BoolValue(false)},
+				}
+				metrics.EmitTime(ctx, "mongo", time.Now().UnixMilli()-start, attr...)
+				metrics.EmitCount(ctx, "mongo", 1, attr...)
+			}
+		},
+	}
+	options.SetMonitor(monitor)
 }
