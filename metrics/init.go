@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	api "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"time"
 )
 
 var meter api.Meter
@@ -27,7 +28,7 @@ func Init() {
 		panic(fmt.Sprintf("init exporter: %v", err))
 	}
 	provider := metric.NewMeterProvider(
-		metric.WithReader(metric.NewPeriodicReader(exporter)),
+		metric.WithReader(metric.NewPeriodicReader(exporter, metric.WithInterval(3*time.Second))), //默认周期是1min
 		metric.WithView(metric.NewView(
 			metric.Instrument{
 				Kind: metric.InstrumentKindHistogram,

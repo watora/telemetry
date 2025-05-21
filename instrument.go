@@ -207,7 +207,6 @@ func InstrumentMongo(options *options.ClientOptions) *options.ClientOptions {
 		Started: func(ctx context.Context, e *event.CommandStartedEvent) {
 			p := &ctx
 			*p = context.WithValue(ctx, "metrics.start", time.Now().UnixMilli())
-
 		},
 		Succeeded: func(ctx context.Context, succeededEvent *event.CommandSucceededEvent) {
 			v := ctx.Value("metrics.start")

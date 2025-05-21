@@ -11,9 +11,9 @@ import (
 
 func Init(fn func(cfg *config.Config)) {
 	cfg := config.Global
+	cfg.HostName, _ = os.Hostname()
 	fn(cfg)
 	cfg.AppName = strings.ReplaceAll(cfg.AppName, "-", "_")
-	cfg.HostName, _ = os.Hostname()
 	if cfg.UseMetrics {
 		metrics.Init()
 	}
