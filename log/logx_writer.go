@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 )
 
@@ -50,7 +51,6 @@ func (w *LogxWriter) Stack(v any) {
 }
 
 func (w *LogxWriter) Stat(v any, fields ...logx.LogField) {
-	w.Emit(v, log.SeverityInfo, fields...)
 }
 
 func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
@@ -58,7 +58,7 @@ func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
 	r.SetTimestamp(time.Now())
 	r.SetBody(log.StringValue(v.(string)))
 	r.SetSeverity(level)
-	r.SetSeverityText(level.String())
+	r.SetSeverityText(strings.ToLower(level.String()))
 
 	pc, _, _, ok := runtime.Caller(w.callDepth)
 	if ok {
