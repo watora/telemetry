@@ -78,7 +78,7 @@ func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
 	ctx := context.Background()
 	for _, field := range fields {
 		rv := reflect.ValueOf(field.Value)
-		if rv.IsNil() {
+		if rv.Kind() == reflect.Ptr && rv.IsNil() {
 			continue
 		}
 		if rv.Kind() == reflect.Ptr {

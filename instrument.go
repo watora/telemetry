@@ -203,40 +203,31 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 
 // InstrumentMongo 仪表化mongo
 func InstrumentMongo(options *options.ClientOptions) *options.ClientOptions {
+	emit := func(ctx context.Context, command string, success bool) {
+		v := ctx.Value("metrics.mongo.start")
+		if v != nil {
+			start := v.(int64)
+			attr := []attribute.KeyValue{
+				{Key: "cmd", Value: attribute.StringValue(command)},
+				{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
+				{Key: "success", Value: attribute.BoolValue(success)},
+			}
+			metrics.EmitTime(ctx, "mongo", time.Now().UnixMilli()-start, attr...)
+			metrics.EmitCount(ctx, "mongo", 1, attr...)
+		}
+	}
 	monitor := &event.CommandMonitor{
 		Started: func(ctx context.Context, e *event.CommandStartedEvent) {
 			p := &ctx
-			*p = context.WithValue(ctx, "metrics.start", time.Now().UnixMilli())
+			*p = context.WithValue(ctx, "metrics.mongo.start", time.Now().UnixMilli())
 		},
 		Succeeded: func(ctx context.Context, succeededEvent *event.CommandSucceededEvent) {
-			v := ctx.Value("metrics.start")
-			if v != nil {
-				start := v.(int64)
-				attr := []attribute.KeyValue{
-					{Key: "cmd", Value: attribute.StringValue(succeededEvent.CommandName)},
-					{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
-					{Key: "env", Value: attribute.StringValue(config.Global.Env)},
-					{Key: "version", Value: attribute.StringValue(config.Global.Version)},
-					{Key: "success", Value: attribute.BoolValue(true)},
-				}
-				metrics.EmitTime(ctx, "mongo", time.Now().UnixMilli()-start, attr...)
-				metrics.EmitCount(ctx, "mongo", 1, attr...)
-			}
+			emit(ctx, succeededEvent.CommandName, true)
 		},
 		Failed: func(ctx context.Context, failedEvent *event.CommandFailedEvent) {
-			v := ctx.Value("metrics.start")
-			if v != nil {
-				start := v.(int64)
-				attr := []attribute.KeyValue{
-					{Key: "cmd", Value: attribute.StringValue(failedEvent.CommandName)},
-					{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
-					{Key: "env", Value: attribute.StringValue(config.Global.Env)},
-					{Key: "version", Value: attribute.StringValue(config.Global.Version)},
-					{Key: "success", Value: attribute.BoolValue(false)},
-				}
-				metrics.EmitTime(ctx, "mongo", time.Now().UnixMilli()-start, attr...)
-				metrics.EmitCount(ctx, "mongo", 1, attr...)
-			}
+			emit(ctx, failedEvent.CommandName, true)
 		},
 	}
 	return options.SetMonitor(monitor)
