@@ -61,23 +61,13 @@ func newLoggerProvider(res *resource.Resource, endPoint string) (*log.LoggerProv
 	return provider, nil
 }
 
-// ZapBridge 使zap导出otel格式日志
-func ZapBridge(logger *zap.Logger) *zap.Logger {
-	otelCore := otelzap.NewCore("telemetry", otelzap.WithLoggerProvider(global.GetLoggerProvider()))
-	return zap.New(zapcore.NewTee(
-		otelCore,
-		logger.Core(),
-	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).
-		With(zap.String("env", config.Global.Env))
-}
-
 // 初始化默认logger 输出到collector和stderr
 func initDefaultLogger() {
 	level := zapcore.InfoLevel
 	if config.Global.Env == "local" {
 		level = zapcore.DebugLevel
 	}
-	otelCore := otelzap.NewCore("telemetry", otelzap.WithLoggerProvider(global.GetLoggerProvider()))
+	otelCore := otelzap.NewCore("telemetry_zap", otelzap.WithLoggerProvider(global.GetLoggerProvider()))
 	stdCore := zapcore.NewCore(
 		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
 		zapcore.Lock(os.Stderr),

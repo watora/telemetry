@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/aceld/zinx v1.2.6
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/zeromicro/go-zero v1.8.2
+	github.com/zeromicro/go-zero v1.8.3
 	go.opentelemetry.io/contrib/bridges/otelzap v0.10.0
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.11.0
