@@ -29,7 +29,7 @@ func getCounter(name string) (api.Int64Counter, error) {
 		counter, ok := counterMap[name]
 		if !ok {
 			var err error
-			counter, err = meter.Int64Counter(fmt.Sprintf("%v_%v", config.Global.AppName, name))
+			counter, err = meter.Int64Counter(fmt.Sprintf("%v_%v_c", config.Global.AppName, name))
 			if err != nil {
 				return nil, err
 			}
