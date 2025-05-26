@@ -22,6 +22,9 @@ import (
 
 // InstrumentGORM 仪表化gorm
 func InstrumentGORM(db *gorm.DB) {
+	if !config.Global.Init {
+		return
+	}
 	before := func(db *gorm.DB) {
 		start := time.Now().UnixMilli()
 		db.Set("metrics.start", start)
@@ -65,6 +68,9 @@ func InstrumentGORM(db *gorm.DB) {
 
 // InstrumentGoZero 仪表化gozero
 func InstrumentGoZero(server *rest.Server) {
+	if !config.Global.Init {
+		return
+	}
 	//add middleware
 	server.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +102,9 @@ func InstrumentGoZero(server *rest.Server) {
 
 // InstrumentZinx 仪表化zinx
 func InstrumentZinx(server ziface.IServer) {
+	if !config.Global.Init {
+		return
+	}
 	server.Use(func(request ziface.IRequest) {
 		start := time.Now().UnixMilli()
 		request.RouterSlicesNext()
@@ -134,6 +143,9 @@ func InstrumentZinx(server ziface.IServer) {
 
 // InstrumentRedisV8 仪表化redis，必须是v8的连接
 func InstrumentRedisV8(client *redis.ClusterClient) {
+	if !config.Global.Init {
+		return
+	}
 	client.AddHook(&metrics.RedisHook{
 		MeterBefore: func(ctx context.Context) context.Context {
 			start := time.Now().UnixMilli()
@@ -165,6 +177,9 @@ func InstrumentRedisV8(client *redis.ClusterClient) {
 
 // InstrumentRedis 仪表化redis，必须是v6的连接
 func InstrumentRedis(client *redisV6.ClusterClient) {
+	if !config.Global.Init {
+		return
+	}
 	// 替换process
 	client.WrapProcess(func(oldProcess func(redisV6.Cmder) error) func(redisV6.Cmder) error {
 		return func(cmder redisV6.Cmder) error {
@@ -203,6 +218,9 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 
 // InstrumentMongo 仪表化mongo
 func InstrumentMongo(options *options.ClientOptions) *options.ClientOptions {
+	if !config.Global.Init {
+		return options
+	}
 	emit := func(ctx context.Context, command string, success bool, duration time.Duration) {
 		attr := []attribute.KeyValue{
 			{Key: "cmd", Value: attribute.StringValue(command)},

@@ -13,6 +13,9 @@ var g singleflight.Group
 
 // EmitCount 计量次数
 func EmitCount(ctx context.Context, name string, incr int64, attr ...attribute.KeyValue) {
+	if !config.Global.Init {
+		return
+	}
 	counter, err := getCounter(name)
 	if err != nil {
 		return
@@ -42,6 +45,9 @@ func getCounter(name string) (api.Int64Counter, error) {
 
 // EmitTime 计量时间
 func EmitTime(ctx context.Context, name string, ms int64, attr ...attribute.KeyValue) {
+	if !config.Global.Init {
+		return
+	}
 	timer, err := getTimer(name)
 	if err != nil {
 		return
@@ -71,6 +77,9 @@ func getTimer(name string) (api.Int64Histogram, error) {
 
 // EmitGauge 记录当前值
 func EmitGauge(ctx context.Context, name string, n int64, attr ...attribute.KeyValue) {
+	if !config.Global.Init {
+		return
+	}
 	gauge, err := getGauge(name)
 	if err != nil {
 		return

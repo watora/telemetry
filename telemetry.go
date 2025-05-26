@@ -13,6 +13,7 @@ func Init(fn func(cfg *config.Config)) {
 	cfg := config.Global
 	cfg.HostName, _ = os.Hostname()
 	fn(cfg)
+	cfg.Init = true
 	cfg.AppName = strings.ReplaceAll(cfg.AppName, "-", "_")
 	if cfg.UseMetrics {
 		metrics.Init()
