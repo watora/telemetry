@@ -61,7 +61,7 @@ func getTimer(name string) (api.Int64Histogram, error) {
 		timer, ok := timerMap[name]
 		if !ok {
 			var err error
-			timer, err = meter.Int64Histogram(fmt.Sprintf("%v_%v", config.Global.AppName, name))
+			timer, err = meter.Int64Histogram(fmt.Sprintf("%v_%v_h", config.Global.AppName, name))
 			if err != nil {
 				return nil, err
 			}
@@ -93,7 +93,7 @@ func getGauge(name string) (api.Int64Gauge, error) {
 		gauge, ok := gaugeMap[name]
 		if !ok {
 			var err error
-			gauge, err = meter.Int64Gauge(fmt.Sprintf("%v_%v", config.Global.AppName, name))
+			gauge, err = meter.Int64Gauge(fmt.Sprintf("%v_%v_g", config.Global.AppName, name))
 			if err != nil {
 				return nil, err
 			}
