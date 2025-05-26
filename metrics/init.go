@@ -28,7 +28,7 @@ func Init() {
 		panic(fmt.Sprintf("init exporter: %v", err))
 	}
 	provider := metric.NewMeterProvider(
-		metric.WithReader(metric.NewPeriodicReader(exporter, metric.WithInterval(10*time.Second))), //默认周期是1min
+		metric.WithReader(metric.NewPeriodicReader(exporter, metric.WithInterval(14*time.Second))), //14s导出一次数据
 		metric.WithView(metric.NewView(
 			metric.Instrument{
 				Kind: metric.InstrumentKindHistogram,
