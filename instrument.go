@@ -94,8 +94,8 @@ func InstrumentGoZero(server *rest.Server) {
 				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
 				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
-			metrics.EmitTime(r.Context(), "http_duration", end-start, attr...)
-			metrics.EmitCount(r.Context(), "http_count", 1, attr...)
+			metrics.EmitTime(newCtx, "http_duration", end-start, attr...)
+			metrics.EmitCount(newCtx, "http_count", 1, attr...)
 		}
 	})
 }
