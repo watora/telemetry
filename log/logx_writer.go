@@ -77,6 +77,10 @@ func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
 
 	ctx := context.Background()
 	for _, field := range fields {
+		if c, isCtx := field.Value.(context.Context); isCtx {
+			ctx = c
+			continue
+		}
 		rv := reflect.ValueOf(field.Value)
 		if rv.Kind() == reflect.Ptr && rv.IsNil() {
 			continue
@@ -86,8 +90,6 @@ func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
 		}
 		actualValue := rv.Interface()
 		switch actualValue.(type) {
-		case context.Context:
-			ctx = field.Value.(context.Context)
 		case string:
 			r.AddAttributes(log.String(field.Key, field.Value.(string)))
 		case int:
@@ -96,6 +98,10 @@ func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
 			r.AddAttributes(log.Int64(field.Key, field.Value.(int64)))
 		case int32:
 			r.AddAttributes(log.Int(field.Key, int(field.Value.(int32))))
+		case float64:
+			r.AddAttributes(log.Float64(field.Key, field.Value.(float64)))
+		case float32:
+			r.AddAttributes(log.Float64(field.Key, float64(field.Value.(float32))))
 		default:
 			d, _ := json.Marshal(field.Value)
 			r.AddAttributes(log.String(field.Key, string(d)))
