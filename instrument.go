@@ -50,8 +50,8 @@ func InstrumentGORM(db *gorm.DB) {
 					{Key: "driver", Value: attribute.StringValue(db.Dialector.Name())},
 					{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 				}
-				metrics.EmitTime(ctx, "gorm", end-start, attr...)
-				metrics.EmitCount(ctx, "gorm", 1, attr...)
+				metrics.EmitTime(ctx, "gorm_duration", end-start, attr...)
+				metrics.EmitCount(ctx, "gorm_count", 1, attr...)
 			}
 		}
 	}
@@ -94,8 +94,8 @@ func InstrumentGoZero(server *rest.Server) {
 				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
 				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
-			metrics.EmitTime(r.Context(), "http", end-start, attr...)
-			metrics.EmitCount(r.Context(), "http", 1, attr...)
+			metrics.EmitTime(r.Context(), "http_duration", end-start, attr...)
+			metrics.EmitCount(r.Context(), "http_count", 1, attr...)
 		}
 	})
 }
@@ -116,8 +116,8 @@ func InstrumentZinx(server ziface.IServer) {
 			{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 		}
 		ctx := context.Background()
-		metrics.EmitTime(ctx, "zinx", end-start, attr...)
-		metrics.EmitCount(ctx, "zinx", 1, attr...)
+		metrics.EmitTime(ctx, "zinx_duration", end-start, attr...)
+		metrics.EmitCount(ctx, "zinx_count", 1, attr...)
 	})
 	// 记录连接数
 	var connected int64
@@ -169,8 +169,8 @@ func InstrumentRedisV8(client *redis.ClusterClient) {
 				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
 				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
-			metrics.EmitTime(ctx, "redis_v8", end-start.(int64), attr...)
-			metrics.EmitCount(ctx, "redis_v8", 1, attr...)
+			metrics.EmitTime(ctx, "redis_v8_duration", end-start.(int64), attr...)
+			metrics.EmitCount(ctx, "redis_v8_count", 1, attr...)
 		},
 	})
 }
@@ -192,8 +192,8 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
 			ctx := context.Background()
-			metrics.EmitTime(ctx, "redis_v6", time.Now().UnixMilli()-start, attr...)
-			metrics.EmitCount(ctx, "redis_v6", 1, attr...)
+			metrics.EmitTime(ctx, "redis_v6_duration", time.Now().UnixMilli()-start, attr...)
+			metrics.EmitCount(ctx, "redis_v6_count", 1, attr...)
 			return err
 		}
 	})
@@ -209,8 +209,8 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			}
 			ctx := context.Background()
-			metrics.EmitTime(ctx, "redis_v6", time.Now().UnixMilli()-start, attr...)
-			metrics.EmitCount(ctx, "redis_v6", 1, attr...)
+			metrics.EmitTime(ctx, "redis_v6_duration", time.Now().UnixMilli()-start, attr...)
+			metrics.EmitCount(ctx, "redis_v6_count", 1, attr...)
 			return err
 		}
 	})
@@ -229,8 +229,8 @@ func InstrumentMongo(options *options.ClientOptions) *options.ClientOptions {
 			{Key: "version", Value: attribute.StringValue(config.Global.Version)},
 			{Key: "success", Value: attribute.BoolValue(success)},
 		}
-		metrics.EmitTime(ctx, "mongo", duration.Milliseconds(), attr...)
-		metrics.EmitCount(ctx, "mongo", 1, attr...)
+		metrics.EmitTime(ctx, "mongo_duration", duration.Milliseconds(), attr...)
+		metrics.EmitCount(ctx, "mongo_count", 1, attr...)
 	}
 	monitor := &event.CommandMonitor{
 		Succeeded: func(ctx context.Context, succeededEvent *event.CommandSucceededEvent) {
