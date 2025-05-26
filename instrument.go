@@ -203,31 +203,23 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 
 // InstrumentMongo 仪表化mongo
 func InstrumentMongo(options *options.ClientOptions) *options.ClientOptions {
-	emit := func(ctx context.Context, command string, success bool) {
-		v := ctx.Value("metrics.mongo.start")
-		if v != nil {
-			start := v.(int64)
-			attr := []attribute.KeyValue{
-				{Key: "cmd", Value: attribute.StringValue(command)},
-				{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
-				{Key: "env", Value: attribute.StringValue(config.Global.Env)},
-				{Key: "version", Value: attribute.StringValue(config.Global.Version)},
-				{Key: "success", Value: attribute.BoolValue(success)},
-			}
-			metrics.EmitTime(ctx, "mongo", time.Now().UnixMilli()-start, attr...)
-			metrics.EmitCount(ctx, "mongo", 1, attr...)
+	emit := func(ctx context.Context, command string, success bool, duration time.Duration) {
+		attr := []attribute.KeyValue{
+			{Key: "cmd", Value: attribute.StringValue(command)},
+			{Key: "host", Value: attribute.StringValue(config.Global.HostName)},
+			{Key: "env", Value: attribute.StringValue(config.Global.Env)},
+			{Key: "version", Value: attribute.StringValue(config.Global.Version)},
+			{Key: "success", Value: attribute.BoolValue(success)},
 		}
+		metrics.EmitTime(ctx, "mongo", duration.Milliseconds(), attr...)
+		metrics.EmitCount(ctx, "mongo", 1, attr...)
 	}
 	monitor := &event.CommandMonitor{
-		Started: func(ctx context.Context, e *event.CommandStartedEvent) {
-			p := &ctx
-			*p = context.WithValue(ctx, "metrics.mongo.start", time.Now().UnixMilli())
-		},
 		Succeeded: func(ctx context.Context, succeededEvent *event.CommandSucceededEvent) {
-			emit(ctx, succeededEvent.CommandName, true)
+			emit(ctx, succeededEvent.CommandName, true, succeededEvent.Duration)
 		},
 		Failed: func(ctx context.Context, failedEvent *event.CommandFailedEvent) {
-			emit(ctx, failedEvent.CommandName, true)
+			emit(ctx, failedEvent.CommandName, true, failedEvent.Duration)
 		},
 	}
 	return options.SetMonitor(monitor)
