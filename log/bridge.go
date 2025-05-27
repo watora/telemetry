@@ -17,7 +17,7 @@ func LogxBridge() {
 	logProvider := global.GetLoggerProvider()
 	logx.AddWriter(&LogxWriter{
 		logger:    logProvider.Logger("telemetry_logx"),
-		callDepth: 4,
+		callDepth: 5,
 	})
 }
 

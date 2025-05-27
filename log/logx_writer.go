@@ -3,13 +3,13 @@ package log
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/watora/telemetry/config"
 	"github.com/zeromicro/go-zero/core/logx"
 	"go.opentelemetry.io/otel/log"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"reflect"
 	"runtime"
-	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -61,19 +61,25 @@ func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
 	r.SetSeverity(level)
 	r.SetSeverityText(strings.ToLower(level.String()))
 
-	pc, _, _, ok := runtime.Caller(w.callDepth)
-	if ok {
-		frames := runtime.CallersFrames([]uintptr{pc})
-		frame, _ := frames.Next()
+	pcs := make([]uintptr, 20)
+	runtime.Callers(w.callDepth, pcs)
+	if pcs[0] > 0 {
+		frames := runtime.CallersFrames(pcs)
+		frame, more := frames.Next()
 		r.AddAttributes(
 			log.String(string(semconv.CodeFilepathKey), frame.File),
 			log.Int(string(semconv.CodeLineNumberKey), frame.Line),
 			log.String(string(semconv.CodeFunctionKey), frame.Function),
 		)
-	}
-
-	if level >= log.SeverityError {
-		r.AddAttributes(log.String(string(semconv.CodeStacktraceKey), string(debug.Stack())))
+		var stack string
+		if level >= log.SeverityError {
+			for more {
+				stack += fmt.Sprintf("%s\n\t%s:%d\n", frame.Function, frame.File, frame.Line)
+				frame, more = frames.Next()
+			}
+			// 捕捉调用栈
+			r.AddAttributes(log.String(string(semconv.CodeStacktraceKey), stack))
+		}
 	}
 
 	ctx := context.Background()
