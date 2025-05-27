@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"encoding/json"
+	"github.com/watora/telemetry/config"
 	"github.com/zeromicro/go-zero/core/logx"
 	"go.opentelemetry.io/otel/log"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -107,5 +108,6 @@ func (w *LogxWriter) Emit(v any, level log.Severity, fields ...logx.LogField) {
 			r.AddAttributes(log.String(field.Key, string(d)))
 		}
 	}
+	r.AddAttributes(log.String("env", config.Global.Env))
 	w.logger.Emit(ctx, r)
 }
