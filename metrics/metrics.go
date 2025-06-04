@@ -11,6 +11,26 @@ import (
 
 var g singleflight.Group
 
+func fillCommonAttr(attr []attribute.KeyValue) []attribute.KeyValue {
+	keyMap := make(map[string]struct{}, len(attr))
+	for _, item := range attr {
+		keyMap[string(item.Key)] = struct{}{}
+	}
+	if _, ok := keyMap["env"]; !ok {
+		attr = append(attr, attribute.String("env", config.Global.Env))
+	}
+	if _, ok := keyMap["version"]; !ok {
+		attr = append(attr, attribute.String("version", config.Global.Version))
+	}
+	if _, ok := keyMap["host"]; !ok {
+		attr = append(attr, attribute.String("host", config.Global.HostName))
+	}
+	if _, ok := keyMap["service.name"]; !ok {
+		attr = append(attr, attribute.String("service.name", config.Global.AppName))
+	}
+	return attr
+}
+
 // EmitCount 计量次数
 func EmitCount(ctx context.Context, name string, incr int64, attr ...attribute.KeyValue) {
 	if !config.Global.Init {
@@ -20,7 +40,7 @@ func EmitCount(ctx context.Context, name string, incr int64, attr ...attribute.K
 	if err != nil {
 		return
 	}
-	attr = append(attr, attribute.String("service.name", config.Global.AppName))
+	attr = fillCommonAttr(attr)
 	counter.Add(ctx, incr, api.WithAttributes(attr...))
 }
 
@@ -52,7 +72,7 @@ func EmitTime(ctx context.Context, name string, ms int64, attr ...attribute.KeyV
 	if err != nil {
 		return
 	}
-	attr = append(attr, attribute.String("service.name", config.Global.AppName))
+	attr = fillCommonAttr(attr)
 	timer.Record(ctx, ms, api.WithAttributes(attr...))
 }
 
@@ -84,7 +104,7 @@ func EmitGauge(ctx context.Context, name string, n int64, attr ...attribute.KeyV
 	if err != nil {
 		return
 	}
-	attr = append(attr, attribute.String("service.name", config.Global.AppName))
+	attr = fillCommonAttr(attr)
 	gauge.Record(ctx, n, api.WithAttributes(attr...))
 }
 
