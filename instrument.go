@@ -76,7 +76,7 @@ func InstrumentGoZero(server *rest.Server) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now().UnixMilli()
 			wl := &metrics.WriteLogger{ResponseWriter: w}
-			newCtx, span := trace.Tracer.Start(r.Context(), "http_request")
+			newCtx, span := trace.StartTrace(r.Context(), "http_request")
 			defer span.End()
 			r = r.WithContext(newCtx)
 			next(wl, r)
