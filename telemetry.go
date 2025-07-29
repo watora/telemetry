@@ -15,11 +15,11 @@ func Init(fn func(cfg *config.Config)) {
 	fn(cfg)
 	cfg.Init = true
 	cfg.AppName = strings.ReplaceAll(cfg.AppName, "-", "_")
+	trace.Init()
 	if cfg.UseMetrics {
 		metrics.Init()
 	}
 	if cfg.UseLogger {
 		log.Init()
-		trace.Init()
 	}
 }
