@@ -22,7 +22,7 @@ import (
 
 // InstrumentGORM 仪表化gorm
 func InstrumentGORM(db *gorm.DB) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	before := func(db *gorm.DB) {
@@ -68,7 +68,7 @@ func InstrumentGORM(db *gorm.DB) {
 
 // InstrumentGoZero 仪表化gozero
 func InstrumentGoZero(server *rest.Server) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	//add middleware
@@ -102,7 +102,7 @@ func InstrumentGoZero(server *rest.Server) {
 
 // InstrumentZinx 仪表化zinx
 func InstrumentZinx(server ziface.IServer) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	server.Use(func(request ziface.IRequest) {
@@ -143,7 +143,7 @@ func InstrumentZinx(server ziface.IServer) {
 
 // InstrumentRedisV8 仪表化redis，必须是v8的连接
 func InstrumentRedisV8(client *redis.ClusterClient) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	client.AddHook(&metrics.RedisHook{
@@ -177,7 +177,7 @@ func InstrumentRedisV8(client *redis.ClusterClient) {
 
 // InstrumentRedis 仪表化redis，必须是v6的连接
 func InstrumentRedis(client *redisV6.ClusterClient) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	// 替换process
@@ -218,7 +218,7 @@ func InstrumentRedis(client *redisV6.ClusterClient) {
 
 // InstrumentMongo 仪表化mongo
 func InstrumentMongo(options *options.ClientOptions) *options.ClientOptions {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return options
 	}
 	emit := func(ctx context.Context, command string, success bool, duration time.Duration) {
