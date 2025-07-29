@@ -1,7 +1,6 @@
 package config
 
 type Config struct {
-	Init            bool
 	AppName         string
 	Version         string
 	MetricsEndPoint string

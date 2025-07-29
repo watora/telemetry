@@ -33,7 +33,7 @@ func fillCommonAttr(attr []attribute.KeyValue) []attribute.KeyValue {
 
 // EmitCount 计量次数
 func EmitCount(ctx context.Context, name string, incr int64, attr ...attribute.KeyValue) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	counter, err := getCounter(name)
@@ -65,7 +65,7 @@ func getCounter(name string) (api.Int64Counter, error) {
 
 // EmitTime 计量时间
 func EmitTime(ctx context.Context, name string, ms int64, attr ...attribute.KeyValue) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	timer, err := getTimer(name)
@@ -97,7 +97,7 @@ func getTimer(name string) (api.Int64Histogram, error) {
 
 // EmitGauge 记录当前值
 func EmitGauge(ctx context.Context, name string, n int64, attr ...attribute.KeyValue) {
-	if !config.Global.Init {
+	if !config.Global.UseMetrics {
 		return
 	}
 	gauge, err := getGauge(name)

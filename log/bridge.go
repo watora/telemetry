@@ -11,7 +11,7 @@ import (
 
 // LogxBridge 使logx导出otel日志
 func LogxBridge() {
-	if !config.Global.Init {
+	if !config.Global.UseLogger {
 		return
 	}
 	logProvider := global.GetLoggerProvider()
@@ -23,7 +23,7 @@ func LogxBridge() {
 
 // ZapBridge 使zap导出otel日志
 func ZapBridge(logger *zap.Logger) *zap.Logger {
-	if !config.Global.Init {
+	if !config.Global.UseLogger {
 		return logger
 	}
 	otelCore := otelzap.NewCore("telemetry_zap", otelzap.WithLoggerProvider(global.GetLoggerProvider()))

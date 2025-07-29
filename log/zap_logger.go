@@ -7,9 +7,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var devLogger = zap.NewExample()
+
 // WithCtx 要带traceId的话需要先调这个
 func WithCtx(logger *zap.Logger, ctx context.Context) *zap.Logger {
-	if !config.Global.Init {
+	if !config.Global.UseLogger {
 		return logger
 	}
 	return logger.With(zap.Any("context", ctx))
@@ -17,15 +19,16 @@ func WithCtx(logger *zap.Logger, ctx context.Context) *zap.Logger {
 
 // WithCtxDefault 使用默认logger
 func WithCtxDefault(ctx context.Context) *zap.Logger {
-	if !config.Global.Init {
-		return nil
+	if !config.Global.UseLogger {
+		return devLogger
 	}
 	return defaultLogger.With(zap.Any("context", ctx))
 }
 
 // 全局方法
 func ctxLog(ctx context.Context, level zapcore.Level, message string, fields ...zap.Field) {
-	if !config.Global.Init {
+	if !config.Global.UseLogger {
+		devLogger.Log(level, message, fields...)
 		return
 	}
 	// 传context可以自动取traceId
