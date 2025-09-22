@@ -6,7 +6,10 @@ import (
 	"github.com/watora/telemetry/config"
 	"go.opentelemetry.io/otel/attribute"
 	api "go.opentelemetry.io/otel/metric"
+	"golang.org/x/sync/singleflight"
 )
+
+var g singleflight.Group
 
 func fillCommonAttr(attr []attribute.KeyValue) []attribute.KeyValue {
 	keyMap := make(map[string]struct{}, len(attr))
@@ -42,14 +45,20 @@ func EmitCount(ctx context.Context, name string, incr int64, attr ...attribute.K
 }
 
 func getCounter(name string) (api.Int64Counter, error) {
-	counter, ok := counterMap.Load(name)
-	if !ok {
-		var err error
-		counter, err = meter.Int64Counter(fmt.Sprintf("%v_%v", config.Global.AppName, name))
-		if err != nil {
-			return nil, err
+	counter, err, _ := g.Do(fmt.Sprintf("counter_init_%v", name), func() (interface{}, error) {
+		counter, ok := counterMap.Load(name)
+		if !ok {
+			var err error
+			counter, err = meter.Int64Counter(fmt.Sprintf("%v_%v", config.Global.AppName, name))
+			if err != nil {
+				return nil, err
+			}
+			counterMap.Store(name, counter)
 		}
-		counterMap.Store(name, counter)
+		return counter, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return counter.(api.Int64Counter), nil
 }
@@ -68,14 +77,20 @@ func EmitTime(ctx context.Context, name string, ms int64, attr ...attribute.KeyV
 }
 
 func getTimer(name string) (api.Int64Histogram, error) {
-	timer, ok := timerMap.Load(name)
-	if !ok {
-		var err error
-		timer, err = meter.Int64Histogram(fmt.Sprintf("%v_%v", config.Global.AppName, name))
-		if err != nil {
-			return nil, err
+	timer, err, _ := g.Do(fmt.Sprintf("timer_init_%v", name), func() (interface{}, error) {
+		timer, ok := timerMap.Load(name)
+		if !ok {
+			var err error
+			timer, err = meter.Int64Histogram(fmt.Sprintf("%v_%v", config.Global.AppName, name))
+			if err != nil {
+				return nil, err
+			}
+			timerMap.Store(name, timer)
 		}
-		timerMap.Store(name, timer)
+		return timer, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return timer.(api.Int64Histogram), nil
 }
@@ -94,14 +109,20 @@ func EmitGauge(ctx context.Context, name string, n int64, attr ...attribute.KeyV
 }
 
 func getGauge(name string) (api.Int64Gauge, error) {
-	gauge, ok := gaugeMap.Load(name)
-	if !ok {
-		var err error
-		gauge, err = meter.Int64Gauge(fmt.Sprintf("%v_%v", config.Global.AppName, name))
-		if err != nil {
-			return nil, err
+	gauge, err, _ := g.Do(fmt.Sprintf("gauge_init_%v", name), func() (interface{}, error) {
+		gauge, ok := gaugeMap.Load(name)
+		if !ok {
+			var err error
+			gauge, err = meter.Int64Gauge(fmt.Sprintf("%v_%v", config.Global.AppName, name))
+			if err != nil {
+				return nil, err
+			}
+			gaugeMap.Store(name, gauge)
 		}
-		gaugeMap.Store(name, gauge)
+		return gauge, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return gauge.(api.Int64Gauge), nil
 }
