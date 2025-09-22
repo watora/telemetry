@@ -7,19 +7,17 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	api "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"sync"
 	"time"
 )
 
 var meter api.Meter
-var counterMap map[string]api.Int64Counter
-var timerMap map[string]api.Int64Histogram
-var gaugeMap map[string]api.Int64Gauge
+var counterMap sync.Map // api.Int64Counter
+var timerMap sync.Map   // api.Int64Histogram
+var gaugeMap sync.Map   // api.Int64Gauge
 
 // Init 初始化 通过收集器进行收集
 func Init() {
-	counterMap = make(map[string]api.Int64Counter)
-	timerMap = make(map[string]api.Int64Histogram)
-	gaugeMap = make(map[string]api.Int64Gauge)
 	exporter, err := otlpmetricgrpc.New(context.Background(),
 		otlpmetricgrpc.WithInsecure(),
 		otlpmetricgrpc.WithEndpoint(config.Global.MetricsEndPoint),
