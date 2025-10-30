@@ -20,16 +20,9 @@ var defaultLogger *zap.Logger
 
 // Init 直接导出otel日志到collector
 func Init() {
-	hostName, _ := os.Hostname()
-	// Create resource
-	res, err := resource.Merge(resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL,
-			semconv.ServiceName(config.Global.AppName),
-			semconv.ServiceVersion(config.Global.Version),
-			semconv.ServiceInstanceID(hostName),
-		))
+	res, err := buildResource(config.Global.AppName, config.Global.Version)
 	if err != nil {
-		panic(fmt.Sprintf("init resource: %v", err))
+		panic(fmt.Sprintf("build resource error: %v", err))
 	}
 	// 新建provider
 	loggerProvider, err := newLoggerProvider(res, config.Global.LogEndPoint)
@@ -39,7 +32,23 @@ func Init() {
 	// provider注册到全局
 	global.SetLoggerProvider(loggerProvider)
 	// init default logger
-	initDefaultLogger()
+	defaultLogger = initLogger(loggerProvider)
+}
+
+// 新建resource
+func buildResource(appName string, version string) (*resource.Resource, error) {
+	hostName, _ := os.Hostname()
+	// 新建resource
+	res, err := resource.Merge(resource.Default(),
+		resource.NewWithAttributes(semconv.SchemaURL,
+			semconv.ServiceName(appName),
+			semconv.ServiceVersion(version),
+			semconv.ServiceInstanceID(hostName),
+		))
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func newLoggerProvider(res *resource.Resource, endPoint string) (*log.LoggerProvider, error) {
@@ -62,20 +71,33 @@ func newLoggerProvider(res *resource.Resource, endPoint string) (*log.LoggerProv
 }
 
 // 初始化默认logger 输出到collector和stderr
-func initDefaultLogger() {
+func initLogger(loggerProvider *log.LoggerProvider) *zap.Logger {
 	level := zapcore.InfoLevel
 	if config.Global.Env == "local" {
 		level = zapcore.DebugLevel
 	}
-	otelCore := otelzap.NewCore("telemetry_zap", otelzap.WithLoggerProvider(global.GetLoggerProvider()))
+	otelCore := otelzap.NewCore("telemetry_zap", otelzap.WithLoggerProvider(loggerProvider))
 	stdCore := zapcore.NewCore(
 		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
 		zapcore.Lock(os.Stderr),
 		level,
 	)
-	defaultLogger = zap.New(zapcore.NewTee(
+	return zap.New(zapcore.NewTee(
 		otelCore,
 		stdCore,
 	), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).
 		With(zap.String("env", config.Global.Env))
+}
+
+// GetLogger 生成指定服务的logger
+func GetLogger(appName string, version string) (*zap.Logger, error) {
+	res, err := buildResource(appName, version)
+	if err != nil {
+		return nil, err
+	}
+	provider, err := newLoggerProvider(res, config.Global.LogEndPoint)
+	if err != nil {
+		return nil, err
+	}
+	return initLogger(provider), nil
 }
